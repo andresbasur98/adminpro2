@@ -16,7 +16,7 @@ export class PerfilComponent implements OnInit {
   public perfilForm: FormGroup;
   public usuario: Usuario;
   public imagenSubir: File;
-  public imgTemp: any = null; // Par mostrar la imagen previa a subir
+  public imgTemp: any = null; // Para mostrar la imagen previa a subir
 
   constructor( private fb: FormBuilder,
               private usuarioService: UsuarioService,

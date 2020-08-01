@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { tap, map, catchError } from 'rxjs/operators';
+import { tap, map, catchError, delay } from 'rxjs/operators';
 
 import { RegisterForm } from '../interfaces/register-form.interface';
 import { LoginForm } from '../interfaces/login-form.interface';
@@ -34,6 +34,14 @@ export class UsuarioService {
 
   get uid(): string {
     return this.usuario.uid || '';
+  }
+
+  get headers(){
+    return {
+      headers: {
+        'x-token': this.token
+      }
+    }
   }
             
   googleInit() {
@@ -95,10 +103,11 @@ export class UsuarioService {
   }
 
   actualizarPerfil( data: {email: string, nombre: string, role: string}){ //Se puede manejar asi la información que llega o también se puede crear una interfaz
-   data = {
-     ...data,
-     role: this.usuario.role
-   }
+
+    data = {
+      ...data,
+      role: this.usuario.role
+    }
 
     return this.http.put(`${base_url}/usuarios/${this.uid}`, data,{
       headers:{
@@ -125,4 +134,30 @@ export class UsuarioService {
                 )
   }
 
+  cargarUsuarios(desde:number = 0){
+    let url = `${base_url}/usuarios?desde=${desde}`;
+    return this.http.get<{total:number, usuarios: Usuario[]}>(url, this.headers) //También podemos crear una interfaz para reducir la línea
+                      .pipe( // Añadimos todo esto para poder mostrar la imagen en el avatar se puede hacer mediante un pipe también
+                        delay(300), // Demoramos la respuesta 3 milisegundos para comprobar el icono loading
+                        map( resp =>{
+                          const usuarios = resp.usuarios.map( 
+                            user => new Usuario(user.nombre, user.email,'', user.google, user.img,user.role, user.uid)
+                            )
+                          return {
+                            total: resp.total,
+                            usuarios
+                          };
+                        })
+                      )
+  }
+
+  eliminarUsuario( usuario: Usuario){
+    const url = `${base_url}/usuarios/${usuario.uid}`;
+    return this.http.delete(url, this.headers);
+  }
+
+  guardarUsuario( usuario: Usuario){ //Se puede manejar asi la información que llega o también se puede crear una interfaz
+
+    return this.http.put(`${base_url}/usuarios/${usuario.uid}`, usuario, this.headers)
+  }
 }
